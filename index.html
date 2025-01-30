@@ -284,12 +284,14 @@
                 let totalPages = Math.ceil(students.length / studentPerPage)
 
                 // Hide pagination buttons if there's only one page
-                if (totalPages < 1) {
-                    prePage.style.display = 'none';
-                    nextPage.style.display = 'none';
-                } else {
-                    prePage.style.display = 'inline-block';
-                    nextPage.style.display = 'inline-block';
+                if (totalPages <=1) {
+                    prePage.style.display = 'none'
+                    nextPage.style.display = 'none'
+                    pageDive.style.display = 'none'
+                }
+                 else {
+                    prePage.style.display = 'block'
+                    nextPage.style.display = 'block'
                 }
 
                 for (let i = 1; i <= totalPages; i++) {
