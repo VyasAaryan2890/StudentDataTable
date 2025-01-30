@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Table</title>
+    <style>
+        /* Your existing styles... */
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: black;
+            color: #fff;
+        }
+
+        .container {
+            margin: 10px auto;
+        }
+
+        .container table {
+            border: 1px solid #fff;
+            margin: 20px auto;
+        }
+
+        form {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        form input {
+            padding: 10px;
+            font-size: 18px;
+            outline: none;
+            border: none;
+            border-radius: 3px;
+        }
+
+        form button {
+            margin-top: 10px;
+            font-size: 18px;
+            padding: 8px 30px;
+            font-weight: 600;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        table th,
+        td {
+            padding: 10px 50px;
+            font-size: 20px;
+        }
+
+        table tr td button {
+            font-size: 16px;
+            padding: 10px 40px;
+            cursor: pointer;
+        }
+
+        table tr .edit {
+            background-color: rgb(11, 77, 11);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            border-radius: 5px;
+        }
+
+        table tr .delete {
+            background-color: red;
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            border-radius: 5px;
+        }
+
+        .pagination {
+            /* border: 1px solid #fff; */
+            display: flex;
+            justify-content: center;
+            justify-content: space-evenly;
+            align-items: center;
+        }
+
+        .pagination button {
+            padding: 10px 40px;
+            background-color: black;
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 1s;
+        }
+
+        .pagination button:hover {
+            background-color: #fff;
+            color: black;
+        }
+
+        .pagination .number {
+            display: flex;
+        }
+
+        .number div {
+            background-color: #fff;
+            color: black;
+            margin: 0px 10px;
+            padding: 11px 20px;
+            border-radius: 50px;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .number div:hover {
+            background-color: #646464;
+            color: #fff;
+        }
+
+        .pagination button:disabled {
+            background-color: #646464;
+            cursor: not-allowed;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <form id="studentForm">
+            <h1>Student Details</h1>
+            <input type="text" placeholder="Enter Name" id="name" />
+            <input type="number" placeholder="Enter Age" id="age" />
+            <input type="text" placeholder="Enter Course" id="course" /><br>
+            <button type="submit" id="addStudent">Add Student</button>
+        </form>
+
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Course</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic data fetch here using for loop -->
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button id="prePage" onclick="changePage(-1)" disabled>Previous</button>
+            <div class="number" id="pageNumbers">
+                <!-- dynamic button insert here -->
+            </div>
+            <button id="nextPage" onclick="changePage(1)">Next</button>
+        </div>
+
+
+        <script>
+            //  global variable
+
+            let editId = null
+            let students = JSON.parse(localStorage.getItem("students")) || []
+            console.log(students)
+            let nextId = parseInt(localStorage.getItem("nextId")) || 1
+
+            let addStudent = document.getElementById('addStudent')
+            let studentForm = document.getElementById('studentForm')
+
+            // for dnamicTbale show accroding pagination
+
+            let prePage = document.getElementById('prePage')
+            let nextPage = document.getElementById('nextPage')
+            let pageNumbers = document.getElementById('pageNumbers')
+
+            let currentPage = 1
+            let studentPerPage = 5
+
+
+            studentForm.addEventListener("submit", function (e) {
+                e.preventDefault()
+                console.log("submit")
+
+                let name = document.getElementById('name').value.trim()
+                let age = document.getElementById('age').value.trim()
+                let course = document.getElementById('course').value.trim()
+
+
+                if (editId === null) {
+                    const newStudent = { id: nextId++, name, age, course }
+                    students.push(newStudent)
+                }
+                else {
+                    let student = students.find((s) => s.id === editId)
+                    student.name = name
+                    student.age = age
+                    student.course = course
+                    editId = null
+                    addStudent.innerHTML = 'Add Student'
+                }
+                saveToLocalStorage()
+                displayStudent()
+                studentForm.reset()
+            })
+
+            function editStudent(id) {
+                student = students.find((s) => s.id === id)
+                document.getElementById('name').value = student.name
+                document.getElementById('age').value = student.age
+                document.getElementById('course').value = student.course
+                editId = id
+                addStudent.innerHTML = 'Update'
+                displayStudent()
+                saveToLocalStorage()
+            }
+
+            function deleteStudent(id) {
+                students = students.filter((s) => s.id !== id)
+
+                // if i delete 11,12 student
+
+                let totalPages = Math.ceil(students.length / studentPerPage);
+                //        3     =             12 / 5
+
+                // after delete 11,12 student
+
+                //        2     =              10 / 5
+                if (currentPage > totalPages) {
+                    // 3 > 2 
+                    currentPage = totalPages; // Move to the last available page
+                    //          = 2
+                }
+                if (currentPage < 1) {
+                    currentPage = 1; // don't go below page 1
+                }
+                saveToLocalStorage()
+                displayStudent()
+            }
+
+
+            function displayStudent() {
+
+
+                let startIndex = (currentPage - 1) * studentPerPage
+                let lastIndex = startIndex + studentPerPage
+                let studentPage = students.slice(startIndex, lastIndex)
+
+                let tbody = document.querySelector('tbody')
+                tbody.innerHTML = ''
+                studentPage.forEach((student) => {
+                    let tr = document.createElement('tr')
+                    tr.innerHTML = `
+                    <td>${student.id}</td>
+                    <td>${student.name}</td>
+                    <td>${student.age}</td>
+                    <td>${student.course}</td>
+                    <td><button onclick="editStudent(${student.id})">Edit</button></td>
+                    <td><button onclick="deleteStudent(${student.id})">Delete</button></td>
+                `;
+                    tbody.prepend(tr)
+                })
+                upDatePagination()
+                saveToLocalStorage()
+            }
+
+            function saveToLocalStorage() {
+                localStorage.setItem("students", JSON.stringify(students))
+                localStorage.setItem("nextId", nextId)
+            }
+
+
+            function upDatePagination() {
+                let pageNumbers = document.getElementById('pageNumbers')
+                pageNumbers.innerHTML = ''
+                let totalPages = Math.ceil(students.length / studentPerPage)
+
+                // Hide pagination buttons if there's only one page
+                if (totalPages < 1) {
+                    prePage.style.display = 'none';
+                    nextPage.style.display = 'none';
+                } else {
+                    prePage.style.display = 'inline-block';
+                    nextPage.style.display = 'inline-block';
+                }
+
+                for (let i = 1; i <= totalPages; i++) {
+                    let pageDive = document.createElement('div')
+                    pageDive.innerHTML = i
+                    if (i === currentPage) {
+                        pageDive.style.backgroundColor = "darkgray"
+                    }
+                    pageDive.onclick = () => {
+                        currentPage = i
+                        displayStudent()
+                    }
+                    pageNumbers.appendChild(pageDive)
+                }
+                prePage.disabled = currentPage === 1
+                nextPage.disabled = currentPage === totalPages
+            }
+
+            function changePage(direcation) {
+                let totalPages = Math.ceil(students.length / studentPerPage)
+                currentPage = currentPage + direcation
+
+                if (currentPage < 1) {
+                    currentPage = 1
+                }
+                if (currentPage > totalPages) {
+                    currentPage = totalPages
+                }
+                displayStudent()
+            }
+
+            displayStudent()
+        </script>
+</body>
+
+</html>
